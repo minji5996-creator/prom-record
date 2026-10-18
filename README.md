@@ -12,3 +12,7 @@
 - 공개 설정은 `site/assets/contact-config.js`의 Supabase URL 및 publishable key만 포함합니다. 관리자 조회는 데이터베이스 RLS와 로그인으로 제한됩니다.
 
 `node scripts/check-site.mjs`로 정적 파일 연결을 확인할 수 있습니다.
+
+## 방문 통계
+
+GA4·GTM 설정과 가져오기 파일은 [analytics/README.md](analytics/README.md)를 확인하세요. 공개 ID가 없으면 추적하지 않습니다.
