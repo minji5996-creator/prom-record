@@ -15,4 +15,4 @@
 
 ## 방문 통계
 
-GA4·GTM 설정과 가져오기 파일은 [analytics/README.md](analytics/README.md)를 확인하세요. 공개 ID가 없으면 추적하지 않습니다.
+GA4·GTM 설정과 가져오기 파일은 [analytics/README.md](analytics/README.md)를 확인하세요. GTM은 독립 연결할 수 있으며 GA4 통계 수집에는 측정 ID와 연결 태그가 필요합니다.
