@@ -8,7 +8,7 @@ const configured=/^GTM-[A-Z0-9]{4,20}$/.test(config.gtmContainerId||'');
 const ga4Configured=/^G-[A-Z0-9]{4,20}$/.test(config.ga4MeasurementId||'');
 const blocked=navigator.globalPrivacyControl===true||navigator.doNotTrack==='1';
 let state=!inScope||!group?'excluded':!configured?'waiting_for_ids':blocked?'browser_opt_out':'awaiting_consent';
-let active=false,googleQueued=false,gtmLoaded=false,googleTagLoaded=false,queue=[],banner,bridge;
+let active=false,googleQueued=false,gtmLoaded=false,googleTagLoaded=false,queue=[],banner,bridge,fallbackTimer,gtmTagConfirmed=false,ga4Controller='none';
 const consentKey='prom-record.analytics-consent.v1';
 function readConsent(){try{return localStorage.getItem(consentKey)}catch{return null}}
 function saveConsent(value){try{localStorage.setItem(consentKey,value)}catch{}}
@@ -26,9 +26,9 @@ function track(name,params={}){
  window.dataLayer.push(metadata);
  if(bridge)bridge.track(name,safe);else if(ga4Configured&&queue.length<50)queue.push([name,safe]);
 }
-function connectGoogleTag(){
+function connectGoogleTag(source='site_fallback'){
  if(!active||!ga4Configured||googleQueued)return;
- googleQueued=true;state='google_tag_queued';
+ googleQueued=true;ga4Controller=source==='gtm'?'gtm':'site_fallback';state='google_tag_queued';
  const frame=document.createElement('iframe');frame.style.cssText='position:fixed;left:-10000px;top:0;width:1px;height:1px;border:0;pointer-events:none;opacity:0';frame.tabIndex=-1;frame.setAttribute('aria-hidden','true');frame.title='PROM RECORD 방문 통계';frame.dataset.ga4Frame='';frame.referrerPolicy='origin';
  const revision=new URL(document.querySelector('script[src*="assets/analytics.js"]')?.src||location.href).searchParams.get('v')||'1';
  frame.src=config.siteOrigin+config.basePath+'assets/analytics-frame.html?v='+encodeURIComponent(revision);
@@ -42,6 +42,13 @@ function connectGoogleTag(){
  };
  frame.onerror=()=>{state='google_tag_load_failed'};document.body.append(frame);
 }
+function activateFromGtm(containerId,measurementId){
+ if(!active||!ga4Configured||containerId!==config.gtmContainerId||measurementId!==config.ga4MeasurementId)return false;
+ const first=!gtmTagConfirmed;gtmTagConfirmed=true;clearTimeout(fallbackTimer);
+ connectGoogleTag('gtm');
+ if(first)window.dataLayer.push({event:'prom_gtm_ga4_connected',prom_gtm_container_id:containerId,prom_ga4_measurement_id:measurementId});
+ return true;
+}
 function activate(){
  if(active||!inScope||!group||!configured||blocked)return;
  active=true;state='gtm_loading';window.dataLayer=window.dataLayer||[];
@@ -50,13 +57,13 @@ function activate(){
  track('page_view');
  window.dataLayer.push({event:'prom_analytics_ready'});
  const script=document.createElement('script');script.async=true;script.src='https://www.googletagmanager.com/gtm.js?id='+encodeURIComponent(config.gtmContainerId);script.onload=()=>{gtmLoaded=true;if(active&&!googleQueued)state=ga4Configured?'gtm_loaded_waiting_for_ga4_tag':'gtm_loaded_waiting_for_ga4'};script.onerror=()=>{if(!googleQueued)state='gtm_load_failed'};document.head.append(script);
- connectGoogleTag();
+ if(ga4Configured)fallbackTimer=setTimeout(()=>connectGoogleTag('site_fallback'),1500);
 }
 function setConsent(value){
  if(!inScope||!group||!configured||blocked)return;
  if(value==='granted'){saveConsent('granted');banner?.remove();activate()}
  else if(value==='denied'){
-  saveConsent('denied');banner?.remove();
+  saveConsent('denied');banner?.remove();clearTimeout(fallbackTimer);
   if(active){push('consent','update',{analytics_storage:'denied'});bridge?.revoke();active=false;queue=[];location.reload()}
   else state='consent_denied';
  }
@@ -69,7 +76,7 @@ function showConsent(){
  for(const [label,value]of [['거부','denied'],['허용','granted']]){const button=document.createElement('button');button.type='button';button.textContent=label;button.dataset.analyticsConsent=value;button.onclick=()=>setConsent(value);actions.append(button)}
  banner.append(copy,actions);document.body.append(banner);
 }
-window.PROM_ANALYTICS=Object.freeze({track,setConsent,connectGoogleTag,getStatus:()=>({state,configured,gtmConfigured:configured,ga4Configured,inScope:!!(inScope&&group),active,gtmLoaded,googleTagLoaded,googleTagQueued:googleQueued})});
+window.PROM_ANALYTICS=Object.freeze({track,setConsent,connectGoogleTag,activateFromGtm,getStatus:()=>({state,configured,gtmConfigured:configured,ga4Configured,inScope:!!(inScope&&group),active,ga4Controller,gtmTagConfirmed,gtmLoaded,googleTagLoaded,googleTagQueued:googleQueued})});
 if(!inScope||!group||!configured||blocked)return;
 function ready(){
  const button=document.createElement('button');button.type='button';button.className='prom-analytics-settings';button.textContent='통계 설정';button.onclick=showConsent;document.body.append(button);

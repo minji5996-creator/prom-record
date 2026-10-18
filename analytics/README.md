@@ -11,7 +11,7 @@
 
 ## 구현
 
-GA4는 사이트에서 직접 시작하므로 별도 GTM 관리자 작업 없이 실행됩니다. 사이트의 멱등 로더는 한 문서에서 GA4를 한 번만 초기화합니다. GTM은 별도로 유지합니다. **같은 측정 ID의 Google/GA4 태그를 GTM에 추가하거나 HTML에 별도 스니펫을 중복 삽입하지 마세요.** 기존 gtm-container-import.json은 로더를 호출하는 선택적 호환용 파일입니다. GA4 연결을 위해 가져올 필요가 없습니다.
+GTM에서 사이트의 GA4 로더를 실행하도록 전환할 준비가 되어 있습니다. **Google 컨테이너 안의 연결 태그 가져오기·게시가 아직 남아 있으며, 연결 완료로 보고하지 않습니다.** gtm-container-import.json을 GTM-WNHDK5M8에 병합하고 게시하면 prom_analytics_ready 이벤트에서 정확한 컨테이너·측정 ID를 확인한 뒤 GA4를 실행합니다. 1.5초 안에 GTM 연결 태그가 실행되지 않으면 기존 사이트 방식으로 GA4 수집을 유지합니다. 늦거나 중복된 GTM 콜백은 Google 태그나 조회를 추가 실행하지 않습니다. **이 연결 파일 외에 같은 ID의 Google/GA4 태그나 HTML 스니펫을 중복 삽입하지 마세요.**
 
 실제 Google 라이브러리 검증 중 기본 향상된 측정이 부모 문서의 뉴스 검색어를 자동 수집하는 것을 확인했습니다. Google 라이브러리는 assets/analytics-frame.html의 빈 동일 출처 문서에서 실행하고, 부모 사이트의 승인된 이벤트와 정리한 페이지 문맥만 전달하도록 분리했습니다. 자동 관찰기가 문의 폼·뉴스 검색창·부모 URL 변경을 직접 읽지 않습니다. 해당 프레임은 noindex이며 직접 단독으로 열면 GA4를 초기화하지 않습니다. 자동 페이지 조회를 끄고 부모 페이지 URL/제목/유입 도메인으로 명시적인 조회를 전송합니다. iframe의 URL을 보고서 페이지 URL로 사용하지 않습니다.
 
@@ -40,10 +40,10 @@ Google Signals와 광고 개인화를 사용하지 않습니다. 사이트 동�
 
 ## 검증
 
-- scripts/qa-analytics.mjs: 모의 Google/Supabase로 미설정·GTM 단독·GTM 빈 컨테이너의 GA4 직접 시작·동의/거부/회수·중복 방지·문의 성공/실패·민감 정보 제외를 검증합니다.
+- scripts/qa-analytics.mjs: 모의 Google/Supabase로 미설정·GTM 단독·GTM 게시 전 기존 수집 유지·GTM 우선 실행·지연/중복 콜백·동의/거부/회수·중복 방지·문의 성공/실패·민감 정보 제외를 검증합니다.
 - scripts/qa-ga4-google-runtime.mjs: 실제 Google 라이브러리를 실행하되 수집 요청은 전송 전에 가로채어 검색어 자동 전송·조회 중복을 확인합니다.
 - scripts/qa-analytics-live.mjs: 공개 13개 페이지와 관리자 제외를 확인하고, 허용 후 실제 Google 태그 로드 및 수집 주소 응답을 검사합니다. GA4 대시보드의 내부 데이터에 접근하는 테스트가 아닙니다.
-- window.PROM_ANALYTICS.getStatus()의 googleTagLoaded는 라이브러리 로드 상태이며, 보고서 수신/처리 완료를 뜻하지 않습니다.
+- window.PROM_ANALYTICS.getStatus()의 gtmTagConfirmed=true 및 ga4Controller=gtm은 해당 문서에서 GTM이 GA4 실행을 제어한 증거입니다. site_fallback이면 기존 직접 수집이 유지 중입니다. googleTagLoaded는 라이브러리 로드 상태이며, 보고서 수신/처리 완료를 뜻하지 않습니다.
 
 공개 ID 변경:
 

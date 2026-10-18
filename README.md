@@ -15,4 +15,4 @@
 
 ## 방문 통계
 
-GA4·GTM 설정과 가져오기 파일은 [analytics/README.md](analytics/README.md)를 확인하세요. 방문 동의 후 GTM과 GA4를 로드합니다. GA4는 사이트에서 직접 시작하며 개인정보가 있는 폼과 검색 화면을 자동 관찰하지 않습니다.
+GA4·GTM 설정과 가져오기 파일은 [analytics/README.md](analytics/README.md)를 확인하세요. 방문 동의 후 GTM과 GA4를 로드합니다. GTM 연결 파일을 게시하면 GTM이 GA4를 우선 실행하며, 게시 전까지 기존 수집을 유지합니다.
