@@ -1,14 +1,14 @@
 (()=>{'use strict';
 if(window.PROM_ANALYTICS)return;
 const config=window.PROM_ANALYTICS_CONFIG||{},path=location.pathname;
-const pages={'':'Home','index.html':'Home','studio.html':'Studio','work.html':'Work','news.html':'News','z12.html':'Z12','contact.html':'Contact','work/a2o-may.html':'Project','work/naevis.html':'Project','work/pan-chongchong.html':'Project','work/mcnd.html':'Project','work/enderble.html':'Project','work/vfx.html':'Work','kart/':'Game'};
+const pages={'':'Home','index.html':'Home','studio.html':'Studio','work.html':'Work','news.html':'News','z12.html':'Z12','contact.html':'Contact','work/a2o-may.html':'Project','work/naevis.html':'Project','work/pan-chongchong.html':'Project','work/mcnd.html':'Project','work/enderble.html':'Project','work/vfx.html':'Work','kart/':'Game','kart/index.html':'Game'};
 const inScope=location.origin===config.siteOrigin&&path.startsWith(config.basePath||'/prom-record/');
 const route=inScope?path.slice(config.basePath.length):null,group=pages[route];
 const configured=/^GTM-[A-Z0-9]{4,20}$/.test(config.gtmContainerId||'');
 const ga4Configured=/^G-[A-Z0-9]{4,20}$/.test(config.ga4MeasurementId||'');
 const blocked=navigator.globalPrivacyControl===true||navigator.doNotTrack==='1';
 let state=!inScope||!group?'excluded':!configured?'waiting_for_ids':blocked?'browser_opt_out':'awaiting_consent';
-let active=false,googleQueued=false,queue=[],banner;
+let active=false,googleQueued=false,gtmLoaded=false,googleTagLoaded=false,queue=[],banner,bridge;
 const consentKey='prom-record.analytics-consent.v1';
 function readConsent(){try{return localStorage.getItem(consentKey)}catch{return null}}
 function saveConsent(value){try{localStorage.setItem(consentKey,value)}catch{}}
@@ -24,15 +24,23 @@ function track(name,params={}){
  const metadata={event:'prom_'+name,prom_event_name:name};
  for(const key of keys)metadata['prom_'+key]=safe[key]||'';
  window.dataLayer.push(metadata);
- if(googleQueued)push('event',name,safe);else if(ga4Configured&&queue.length<50)queue.push([name,safe]);
+ if(bridge)bridge.track(name,safe);else if(ga4Configured&&queue.length<50)queue.push([name,safe]);
 }
 function connectGoogleTag(){
  if(!active||!ga4Configured||googleQueued)return;
  googleQueued=true;state='google_tag_queued';
- push('js',new Date());
- push('config',config.ga4MeasurementId,{...context,send_page_view:false,allow_google_signals:false,allow_ad_personalization_signals:false,cookie_path:config.basePath});
- for(const [name,params]of queue)push('event',name,params);queue=[];
- const script=document.createElement('script');script.async=true;script.src='https://www.googletagmanager.com/gtag/js?id='+encodeURIComponent(config.ga4MeasurementId);script.onerror=()=>{state='google_tag_load_failed'};document.head.append(script);
+ const frame=document.createElement('iframe');frame.style.cssText='position:fixed;left:-10000px;top:0;width:1px;height:1px;border:0;pointer-events:none;opacity:0';frame.tabIndex=-1;frame.setAttribute('aria-hidden','true');frame.title='PROM RECORD 방문 통계';frame.dataset.ga4Frame='';frame.referrerPolicy='origin';
+ const revision=new URL(document.querySelector('script[src*="assets/analytics.js"]')?.src||location.href).searchParams.get('v')||'1';
+ frame.src=config.siteOrigin+config.basePath+'assets/analytics-frame.html?v='+encodeURIComponent(revision);
+ frame.onload=()=>{
+  if(!active)return;
+  const api=frame.contentWindow?.PROM_GA4_BRIDGE;
+  if(!api){state='google_tag_load_failed';return}
+  const ok=api.initialize(config,context,phase=>{googleTagLoaded=phase==='loaded';state=googleTagLoaded?'google_tag_loaded':'google_tag_load_failed'});
+  if(!ok){state='google_tag_load_failed';return}
+  bridge=api;for(const [name,params]of queue)bridge.track(name,params);queue=[];
+ };
+ frame.onerror=()=>{state='google_tag_load_failed'};document.body.append(frame);
 }
 function activate(){
  if(active||!inScope||!group||!configured||blocked)return;
@@ -41,14 +49,15 @@ function activate(){
  window.dataLayer.push({'gtm.start':Date.now(),event:'gtm.js',prom_content_group:group});
  track('page_view');
  window.dataLayer.push({event:'prom_analytics_ready'});
- const script=document.createElement('script');script.async=true;script.src='https://www.googletagmanager.com/gtm.js?id='+encodeURIComponent(config.gtmContainerId);script.onload=()=>{if(active&&!googleQueued)state=ga4Configured?'gtm_loaded_waiting_for_ga4_tag':'gtm_loaded_waiting_for_ga4'};script.onerror=()=>{state='gtm_load_failed'};document.head.append(script);
+ const script=document.createElement('script');script.async=true;script.src='https://www.googletagmanager.com/gtm.js?id='+encodeURIComponent(config.gtmContainerId);script.onload=()=>{gtmLoaded=true;if(active&&!googleQueued)state=ga4Configured?'gtm_loaded_waiting_for_ga4_tag':'gtm_loaded_waiting_for_ga4'};script.onerror=()=>{if(!googleQueued)state='gtm_load_failed'};document.head.append(script);
+ connectGoogleTag();
 }
 function setConsent(value){
  if(!inScope||!group||!configured||blocked)return;
  if(value==='granted'){saveConsent('granted');banner?.remove();activate()}
  else if(value==='denied'){
   saveConsent('denied');banner?.remove();
-  if(active){push('consent','update',{analytics_storage:'denied'});active=false;queue=[];location.reload()}
+  if(active){push('consent','update',{analytics_storage:'denied'});bridge?.revoke();active=false;queue=[];location.reload()}
   else state='consent_denied';
  }
 }
@@ -60,7 +69,7 @@ function showConsent(){
  for(const [label,value]of [['거부','denied'],['허용','granted']]){const button=document.createElement('button');button.type='button';button.textContent=label;button.dataset.analyticsConsent=value;button.onclick=()=>setConsent(value);actions.append(button)}
  banner.append(copy,actions);document.body.append(banner);
 }
-window.PROM_ANALYTICS=Object.freeze({track,setConsent,connectGoogleTag,getStatus:()=>({state,configured,gtmConfigured:configured,ga4Configured,inScope:!!(inScope&&group),active,googleTagQueued:googleQueued})});
+window.PROM_ANALYTICS=Object.freeze({track,setConsent,connectGoogleTag,getStatus:()=>({state,configured,gtmConfigured:configured,ga4Configured,inScope:!!(inScope&&group),active,gtmLoaded,googleTagLoaded,googleTagQueued:googleQueued})});
 if(!inScope||!group||!configured||blocked)return;
 function ready(){
  const button=document.createElement('button');button.type='button';button.className='prom-analytics-settings';button.textContent='통계 설정';button.onclick=showConsent;document.body.append(button);

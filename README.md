@@ -15,4 +15,4 @@
 
 ## 방문 통계
 
-GA4·GTM 설정과 가져오기 파일은 [analytics/README.md](analytics/README.md)를 확인하세요. GTM은 독립 연결할 수 있으며 GA4 통계 수집에는 측정 ID와 연결 태그가 필요합니다.
+GA4·GTM 설정과 가져오기 파일은 [analytics/README.md](analytics/README.md)를 확인하세요. 방문 동의 후 GTM과 GA4를 로드합니다. GA4는 사이트에서 직접 시작하며 개인정보가 있는 폼과 검색 화면을 자동 관찰하지 않습니다.

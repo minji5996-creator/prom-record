@@ -1,47 +1,54 @@
-# PROM RECORD 방문 통계 연결
+# PROM RECORD 방문 통계
 
-대상: https://minji5996-creator.github.io/prom-record/
+사이트: https://minji5996-creator.github.io/prom-record/
 
-## 현재 상태
+## 연결 정보
 
-GTM 컨테이너 **GTM-WNHDK5M8**을 사이트에 적용했습니다. 방문 통계를 허용하면 GA4 ID 없이도 GTM 컨테이너를 로드합니다. 제공된 공개 컨테이너 응답은 HTTP 200이며 확인 시점에는 GA4 측정 태그가 없었습니다. **GA4 측정 ID가 아직 없어 GA4 방문 통계 수집은 시작되지 않았습니다.** GA4 측정 ID 적용, GTM의 GA4 연결 태그 설정·게시 및 실제 수신 확인이 남아 있습니다. 현재 연결 도구에는 Google 계정 관리 권한이 없습니다.
+- Google 태그 관리자: GTM-WNHDK5M8
+- GA4 측정 ID: G-FF9HTVGCBX
+- 공개 ID 설정: data/analytics.json → public/assets/analytics-config.js
+- 방문 통계를 허용한 경우에만 Google 도구를 로드합니다. 거부, GPC/브라우저 추적 거부, 관리자, 404, 리다이렉트, 다른 GitHub 프로젝트 및 로컬 환경은 제외합니다.
 
-## Google에서 최초 1회 설정
+## 구현
 
-1. https://analytics.google.com/ 에서 계정 및 GA4 속성을 생성합니다. 이름 PROM RECORD, 시간대 대한민국/서울, 통화 KRW. 웹 데이터 스트림 URL은 위 GitHub Pages 전체 주소로 지정합니다. 측정 ID G-…를 확인합니다.
-2. **웹 스트림의 향상된 측정은 끕니다.** 자동 폼 추적은 접수 실패도 전환처럼 오해할 수 있고, 검색·브라우저 기록 자동 측정은 필터 검색어/URL을 보낼 수 있습니다. 이 구현은 별도 안전한 페이지 조회와 접수 완료 이벤트를 보냅니다. Google Signals 및 사용자 제공 데이터 수집도 사용하지 않습니다.
-3. https://tagmanager.google.com/ 에서 기존 컨테이너 GTM-WNHDK5M8을 사용합니다. 새 컨테이너를 만들 필요는 없습니다.
-4. GTM 관리자 → 컨테이너 가져오기에서 옆의 gtm-container-import.json을 새 작업공간에 **병합**합니다. 기존 태그가 있다면 덮어쓰지 않습니다. 이 파일은 동의 후 발생하는 prom_analytics_ready 이벤트에 단일 Custom HTML 태그를 실행합니다. 그 태그가 사이트의 검증된 GA4 로더를 호출합니다. 기존 Google 태그/GA4 태그를 중복 발화시키지 않습니다.
-5. 아래 명령으로 GA4 ID를 추가하고 사이트를 배포합니다. 기존 GTM ID는 유지됩니다. GTM 미리보기로 테스트한 뒤 제출 → 게시합니다. 가져오기 파일은 JSON 및 로컬 동작 검증을 거쳤지만 실제 GTM 계정의 가져오기 결과는 아직 검증되지 않았습니다.
+GA4는 사이트에서 직접 시작하므로 별도 GTM 관리자 작업 없이 실행됩니다. 사이트의 멱등 로더는 한 문서에서 GA4를 한 번만 초기화합니다. GTM은 별도로 유지합니다. **같은 측정 ID의 Google/GA4 태그를 GTM에 추가하거나 HTML에 별도 스니펫을 중복 삽입하지 마세요.** 기존 gtm-container-import.json은 로더를 호출하는 선택적 호환용 파일입니다. GA4 연결을 위해 가져올 필요가 없습니다.
 
-    node scripts/configure-analytics.mjs --ga4 G-실제ID
+실제 Google 라이브러리 검증 중 기본 향상된 측정이 부모 문서의 뉴스 검색어를 자동 수집하는 것을 확인했습니다. Google 라이브러리는 assets/analytics-frame.html의 빈 동일 출처 문서에서 실행하고, 부모 사이트의 승인된 이벤트와 정리한 페이지 문맥만 전달하도록 분리했습니다. 자동 관찰기가 문의 폼·뉴스 검색창·부모 URL 변경을 직접 읽지 않습니다. 해당 프레임은 noindex이며 직접 단독으로 열면 GA4를 초기화하지 않습니다. 자동 페이지 조회를 끄고 부모 페이지 URL/제목/유입 도메인으로 명시적인 조회를 전송합니다. iframe의 URL을 보고서 페이지 URL로 사용하지 않습니다.
+
+Google Signals와 광고 개인화를 사용하지 않습니다. 사이트 동의는 analytics_storage만 허용하고 광고 저장소·광고 사용자 데이터·광고 개인화는 거부합니다. 추적 도구 없이도 문의 접수와 사이트 이용은 가능합니다.
+
+## 이벤트
+
+| 이벤트 | 시점 | 추가 정보 |
+|---|---|---|
+| page_view | 동의 후 공개 페이지마다 1회 | 고정 페이지 URL/제목, 분류, 유입 도메인 |
+| view_project | 작업 상세 링크 선택 | project_id |
+| open_press_article | NEWS 기사 원문 링크 선택 | article_id, publisher |
+| open_social_link | Instagram·YouTube 링크 선택 | platform |
+| play_project_video | 작업 상세 임베드 열기 | platform, video_id |
+| generate_lead | Supabase 접수 확인 후 | form_id=contact |
+
+영상 이벤트는 시청 시간이나 재생 완료가 아니라 임베드를 여는 행동입니다. 이름·이메일·문의 내용·검색 입력·URL 쿼리/해시·복구 토큰·사용자 ID를 직접 전달하지 않습니다. UTM 매개변수도 제외됩니다. 문의 실패와 중복 클릭은 문의 전환으로 보내지 않습니다. 동의를 거부하거나 추적을 차단한 방문은 집계되지 않습니다. GA4는 방문자의 실명/이메일을 자동으로 알려주는 서비스가 아닙니다.
+
+## 관리와 보고서
+
+- https://analytics.google.com/ → 해당 속성 → 보고서 → 실시간에서 최근 방문을 확인합니다.
+- 주요 이벤트로 generate_lead를 등록하면 문의 전환을 별도로 볼 수 있습니다. 계정 안에서 주요 이벤트 등록과 보고서 반영 여부까지 확인한 것은 아닙니다.
+- 작업별 분석이 필요하면 이벤트 범위 맞춤 측정기준 project_id, article_id, publisher, platform, content_group을 등록합니다.
+- Google 수집 주소의 HTTP 응답은 네트워크 수신 확인이며 GA4 보고서 처리/집계를 보증하지 않습니다.
+- 향상된 측정이 필요 없다면 웹 데이터 스트림에서 끌 수 있습니다. 현재 구현은 부모 문서의 자동 DOM·검색 추적에 의존하지 않습니다.
+
+## 검증
+
+- scripts/qa-analytics.mjs: 모의 Google/Supabase로 미설정·GTM 단독·GTM 빈 컨테이너의 GA4 직접 시작·동의/거부/회수·중복 방지·문의 성공/실패·민감 정보 제외를 검증합니다.
+- scripts/qa-ga4-google-runtime.mjs: 실제 Google 라이브러리를 실행하되 수집 요청은 전송 전에 가로채어 검색어 자동 전송·조회 중복을 확인합니다.
+- scripts/qa-analytics-live.mjs: 공개 13개 페이지와 관리자 제외를 확인하고, 허용 후 실제 Google 태그 로드 및 수집 주소 응답을 검사합니다. GA4 대시보드의 내부 데이터에 접근하는 테스트가 아닙니다.
+- window.PROM_ANALYTICS.getStatus()의 googleTagLoaded는 라이브러리 로드 상태이며, 보고서 수신/처리 완료를 뜻하지 않습니다.
+
+공개 ID 변경:
+
+    node scripts/configure-analytics.mjs --gtm GTM-WNHDK5M8 --ga4 G-FF9HTVGCBX
     node scripts/build-seo.mjs
     node scripts/export-github-pages.mjs
 
-6. GA4 관리자에서 generate_lead를 주요 이벤트로 등록합니다. 페이지 이름·기기·국가·사용자 획득/트래픽 획득 보고서로 방문 현황을 봅니다. 세부 작업 분석용 맞춤 측정기준은 이벤트 범위 project_id, article_id, publisher, platform, content_group을 등록합니다.
-
-GTM의 Custom HTML에는 비밀 키나 측정 ID가 들어 있지 않습니다. 공개 ID는 data/analytics.json → public/assets/analytics-config.js 한 곳에서 관리합니다. 태그 관리자 없이 별도 gtag 스니펫을 HTML에 추가하지 마세요. noscript iframe은 방문 통계 동의를 우회하지 않도록 넣지 않았습니다.
-
-## 수집 범위
-
-| 이벤트 | 발생 시점 | 추가 정보 |
-|---|---|---|
-| page_view | 동의 후 공개 페이지마다 1회 | 고정된 페이지 URL, 분류, 안전한 제목, 유입 도메인 |
-| view_project | 작업 상세 페이지 링크 선택 | project_id |
-| open_press_article | NEWS의 기사 원문 링크 선택 | article_id, publisher |
-| open_social_link | Instagram·YouTube 외부 링크 선택 | platform |
-| play_project_video | 작업 상세의 영상/게시물 열기 | platform, video_id |
-| generate_lead | Supabase에서 문의 접수를 확인한 뒤 | form_id=contact |
-
-영상 이벤트는 재생 완료/시청 시간을 뜻하지 않습니다. 임베드를 여는 행동입니다. 이름·이메일·문의 내용·검색 입력·로그인 정보·복구 토큰·원문 전체 URL·사용자 ID는 이벤트에 넣지 않습니다. 관리자·404·리다이렉트·다른 GitHub 저장소·로컬 환경은 추적하지 않습니다. 광고 개인화는 꺼져 있습니다. URL 쿼리/해시와 유입 URL의 경로도 제거하므로 UTM 캠페인 세부 정보는 수집하지 않습니다.
-
-사용자가 방문 통계를 허용한 이후에만 GTM을 로드합니다. GA4는 유효한 측정 ID가 설정되고 GTM의 연결 태그가 실행된 뒤에만 로드합니다. 거부하거나 브라우저 추적 거부/GPC 설정이 있으면 로드하지 않습니다. 허용 여부는 이 사이트용 localStorage 키에 보관하고 우측 하단 통계 설정에서 변경할 수 있습니다. 차단 확장/거부한 방문자는 집계되지 않으므로 전체 접속 기록과 동일하지 않습니다. GA4는 방문자의 실명이나 이메일을 자동으로 알려주는 서비스가 아닙니다.
-
-## 검증과 관리
-
-- node scripts/qa-analytics.mjs: 실제 Chromium 기반으로 네트워크를 모의 처리해 미설정·동의·거부·회수·중복 방지·민감 정보 제외·문의 성공/실패·관리자/다른 사이트 제외를 검증합니다. 이 테스트는 GA4 서버 수신의 증거가 아닙니다.
-- 실제 ID 설정/배포 후: Tag Assistant 미리보기에서 동의 전 요청 없음, 동의 후 단일 컨테이너 실행을 확인합니다. GA4 실시간에서 페이지 조회와 테스트 문의의 generate_lead 수신을 확인합니다. 수신 전에는 연결 완료로 표시하지 않습니다.
-- 브라우저 콘솔의 window.PROM_ANALYTICS.getStatus()는 로컬 로더 상태만 보여줍니다. gtm_loaded_waiting_for_ga4는 GTM 로드 성공·GA4 ID 대기 상태입니다. google_tag_queued는 서버 수신이나 컨테이너 게시 성공을 보증하지 않습니다.
-- 테스트 문의는 테스트 표시로 남기고 관리자에서 구분합니다. 실사용자의 문의 정보는 분석 도구에 전달하지 않습니다.
-
-공식 문서: https://support.google.com/tagmanager/answer/9442095 · https://developers.google.com/tag-platform/tag-manager/datalayer · https://developers.google.com/analytics/devguides/collection/ga4/reference/config · https://support.google.com/analytics/answer/6366371
+공식 문서: https://developers.google.com/analytics/devguides/collection/ga4/views · https://developers.google.com/analytics/devguides/collection/ga4/reference/config
