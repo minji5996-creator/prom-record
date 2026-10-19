@@ -8,7 +8,7 @@ const configured=/^GTM-[A-Z0-9]{4,20}$/.test(config.gtmContainerId||'');
 const ga4Configured=/^G-[A-Z0-9]{4,20}$/.test(config.ga4MeasurementId||'');
 const blocked=navigator.globalPrivacyControl===true||navigator.doNotTrack==='1';
 let state=!inScope||!group?'excluded':!configured?'waiting_for_ids':blocked?'browser_opt_out':'awaiting_consent';
-let active=false,containerQueued=false,googleQueued=false,gtmLoaded=false,googleTagLoaded=false,queue=[],banner,bridge,fallbackTimer,gtmTagConfirmed=false,ga4Controller='none';
+let active=false,containerQueued=false,googleQueued=false,gtmLoaded=false,googleTagLoaded=false,queue=[],banner,gtmTagConfirmed=false,ga4Controller='none';
 const consentKey='prom-record.analytics-consent.v1';
 function readConsent(){try{return localStorage.getItem(consentKey)}catch{return null}}
 function saveConsent(value){try{localStorage.setItem(consentKey,value)}catch{}}
@@ -24,31 +24,20 @@ function track(name,params={}){
  const metadata={event:'prom_'+name,prom_event_name:name};
  for(const key of keys)metadata['prom_'+key]=safe[key]||'';
  window.dataLayer.push(metadata);
- if(bridge)bridge.track(name,safe);else if(ga4Configured&&queue.length<50)queue.push([name,safe]);
+ if(googleQueued)window.gtag('event',name,{...safe,send_to:config.ga4MeasurementId});else if(ga4Configured&&queue.length<50)queue.push([name,safe]);
 }
-function connectGoogleTag(source='site_fallback'){
+function connectGoogleTag(){
  if(!active||!ga4Configured||googleQueued)return;
- googleQueued=true;ga4Controller=source==='gtm'?'gtm':'site_fallback';state='google_tag_queued';
- const frame=document.createElement('iframe');frame.style.cssText='position:fixed;left:-10000px;top:0;width:1px;height:1px;border:0;pointer-events:none;opacity:0';frame.tabIndex=-1;frame.setAttribute('aria-hidden','true');frame.title='PROM RECORD 방문 통계';frame.dataset.ga4Frame='';frame.referrerPolicy='origin';
- const revision=new URL(document.querySelector('script[src*="assets/analytics.js"]')?.src||location.href).searchParams.get('v')||'1';
- frame.src=config.siteOrigin+config.basePath+'assets/analytics-frame.html?v='+encodeURIComponent(revision);
- frame.onload=()=>{
-  if(!active)return;
-  const api=frame.contentWindow?.PROM_GA4_BRIDGE;
-  if(!api){state='google_tag_load_failed';return}
-  const ok=api.initialize(config,context,phase=>{googleTagLoaded=phase==='loaded';state=googleTagLoaded?'google_tag_loaded':'google_tag_load_failed'});
-  if(!ok){state='google_tag_load_failed';return}
-  bridge=api;for(const [name,params]of queue)bridge.track(name,params);queue=[];
- };
- frame.onerror=()=>{state='google_tag_load_failed'};document.body.append(frame);
+ googleQueued=true;ga4Controller='head';state='google_tag_queued';
+ window['ga-disable-'+config.ga4MeasurementId]=false;
+ window.gtag('config',config.ga4MeasurementId,{...context,send_page_view:false,allow_google_signals:false,allow_ad_personalization_signals:false,cookie_path:config.basePath});
+ for(const [name,params]of queue)window.gtag('event',name,{...params,send_to:config.ga4MeasurementId});queue=[];
+ if(window.PROM_GOOGLE_TAG_LOADED){googleTagLoaded=true;state='google_tag_loaded'}
 }
-function activateFromGtm(containerId,measurementId){
- if(!active||!ga4Configured||containerId!==config.gtmContainerId||measurementId!==config.ga4MeasurementId)return false;
- const first=!gtmTagConfirmed;gtmTagConfirmed=true;clearTimeout(fallbackTimer);
- connectGoogleTag('gtm');
- if(first)window.dataLayer.push({event:'prom_gtm_ga4_connected',prom_gtm_container_id:containerId,prom_ga4_measurement_id:measurementId});
- return true;
-}
+// The previously published GTM custom tag may still call this API. Direct head installation owns GA4 now.
+function activateFromGtm(){return false;}
+window.addEventListener('prom-google-tag-loaded',()=>{googleTagLoaded=true;if(active)state='google_tag_loaded'});
+window.addEventListener('prom-google-tag-failed',()=>{if(active)state='google_tag_load_failed'});
 function loadContainer(){
  if(containerQueued||!inScope||!group||!configured||blocked)return;
  containerQueued=true;window.dataLayer=window.dataLayer||[];
@@ -62,15 +51,14 @@ function activate(){
  loadContainer();
  push('consent','update',{analytics_storage:'granted',ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied'});
  track('page_view');
- window.dataLayer.push({event:'prom_analytics_ready'});
- if(ga4Configured&&!googleQueued)fallbackTimer=setTimeout(()=>connectGoogleTag('site_fallback'),1500);
+ connectGoogleTag();
 }
 function setConsent(value){
  if(!inScope||!group||!configured||blocked)return;
  if(value==='granted'){saveConsent('granted');banner?.remove();activate()}
  else if(value==='denied'){
-  saveConsent('denied');banner?.remove();clearTimeout(fallbackTimer);
-  if(active){push('consent','update',{analytics_storage:'denied'});bridge?.revoke();active=false;queue=[];location.reload()}
+  saveConsent('denied');banner?.remove();
+  if(active){push('consent','update',{analytics_storage:'denied'});window['ga-disable-'+config.ga4MeasurementId]=true;active=false;queue=[];location.reload()}
   else state='consent_denied';
  }
 }
@@ -82,7 +70,7 @@ function showConsent(){
  for(const [label,value]of [['거부','denied'],['허용','granted']]){const button=document.createElement('button');button.type='button';button.textContent=label;button.dataset.analyticsConsent=value;button.onclick=()=>setConsent(value);actions.append(button)}
  banner.append(copy,actions);document.body.append(banner);
 }
-window.PROM_ANALYTICS=Object.freeze({track,setConsent,connectGoogleTag,activateFromGtm,getStatus:()=>({state,configured,gtmConfigured:configured,ga4Configured,inScope:!!(inScope&&group),active,ga4Controller,gtmTagConfirmed,gtmLoaded,googleTagLoaded,googleTagQueued:googleQueued})});
+window.PROM_ANALYTICS=Object.freeze({track,setConsent,connectGoogleTag,activateFromGtm,getStatus:()=>({state,configured,gtmConfigured:configured,ga4Configured,inScope:!!(inScope&&group),active,ga4Controller,gtmTagConfirmed,gtmLoaded,googleTagLoaded:!!(googleTagLoaded||window.PROM_GOOGLE_TAG_LOADED),googleTagQueued:googleQueued,installation:'direct_head',legacyGtmBridgeDisabled:true})});
 if(!inScope||!group||!configured||blocked)return;
 loadContainer();
 function ready(){
