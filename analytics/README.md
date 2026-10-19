@@ -4,14 +4,14 @@
 
 ## 연결 정보
 
-- Google 태그 관리자: GTM-WNHDK5M8
+- Google 태그 관리자: GTM-WSNV4HSJ
 - GA4 측정 ID: G-FF9HTVGCBX
 - 공개 ID 설정: data/analytics.json → public/assets/analytics-config.js
 - 방문 통계를 허용한 경우에만 Google 도구를 로드합니다. 거부, GPC/브라우저 추적 거부, 관리자, 404, 리다이렉트, 다른 GitHub 프로젝트 및 로컬 환경은 제외합니다.
 
 ## 구현
 
-GTM에서 사이트의 GA4 로더를 실행하도록 전환할 준비가 되어 있습니다. **Google 컨테이너 안의 연결 태그 가져오기·게시가 아직 남아 있으며, 연결 완료로 보고하지 않습니다.** gtm-container-import.json을 GTM-WNHDK5M8에 병합하고 게시하면 prom_analytics_ready 이벤트에서 정확한 컨테이너·측정 ID를 확인한 뒤 GA4를 실행합니다. 1.5초 안에 GTM 연결 태그가 실행되지 않으면 기존 사이트 방식으로 GA4 수집을 유지합니다. 늦거나 중복된 GTM 콜백은 Google 태그나 조회를 추가 실행하지 않습니다. **이 연결 파일 외에 같은 ID의 Google/GA4 태그나 HTML 스니펫을 중복 삽입하지 마세요.**
+GTM에서 사이트의 GA4 로더를 실행하도록 전환할 준비가 되어 있습니다. **Google 컨테이너 안의 연결 태그 가져오기·게시가 아직 남아 있으며, 연결 완료로 보고하지 않습니다.** gtm-container-import.json을 GTM-WSNV4HSJ에 병합하고 게시하면 prom_analytics_ready 이벤트에서 정확한 컨테이너·측정 ID를 확인한 뒤 GA4를 실행합니다. 1.5초 안에 GTM 연결 태그가 실행되지 않으면 기존 사이트 방식으로 GA4 수집을 유지합니다. 늦거나 중복된 GTM 콜백은 Google 태그나 조회를 추가 실행하지 않습니다. **이 연결 파일 외에 같은 ID의 Google/GA4 태그나 HTML 스니펫을 중복 삽입하지 마세요.**
 
 실제 Google 라이브러리 검증 중 기본 향상된 측정이 부모 문서의 뉴스 검색어를 자동 수집하는 것을 확인했습니다. Google 라이브러리는 assets/analytics-frame.html의 빈 동일 출처 문서에서 실행하고, 부모 사이트의 승인된 이벤트와 정리한 페이지 문맥만 전달하도록 분리했습니다. 자동 관찰기가 문의 폼·뉴스 검색창·부모 URL 변경을 직접 읽지 않습니다. 해당 프레임은 noindex이며 직접 단독으로 열면 GA4를 초기화하지 않습니다. 자동 페이지 조회를 끄고 부모 페이지 URL/제목/유입 도메인으로 명시적인 조회를 전송합니다. iframe의 URL을 보고서 페이지 URL로 사용하지 않습니다.
 
@@ -47,7 +47,7 @@ Google Signals와 광고 개인화를 사용하지 않습니다. 사이트 동�
 
 공개 ID 변경:
 
-    node scripts/configure-analytics.mjs --gtm GTM-WNHDK5M8 --ga4 G-FF9HTVGCBX
+    node scripts/configure-analytics.mjs --gtm GTM-WSNV4HSJ --ga4 G-FF9HTVGCBX
     node scripts/build-seo.mjs
     node scripts/export-github-pages.mjs
 

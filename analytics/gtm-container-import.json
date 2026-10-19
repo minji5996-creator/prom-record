@@ -2,7 +2,7 @@
   "exportFormatVersion": 2,
   "containerVersion": {
     "container": {
-      "name": "PROM RECORD — GTM-WNHDK5M8 / GA4 G-FF9HTVGCBX",
+      "name": "PROM RECORD — GTM-WSNV4HSJ / GA4 G-FF9HTVGCBX",
       "usageContext": [
         "WEB"
       ]
@@ -16,7 +16,7 @@
           {
             "type": "TEMPLATE",
             "key": "html",
-            "value": "<script>if(window.PROM_ANALYTICS){window.PROM_ANALYTICS.activateFromGtm('GTM-WNHDK5M8','G-FF9HTVGCBX');}</script>"
+            "value": "<script>if(window.PROM_ANALYTICS){window.PROM_ANALYTICS.activateFromGtm('GTM-WSNV4HSJ','G-FF9HTVGCBX');}</script>"
           },
           {
             "type": "BOOLEAN",
