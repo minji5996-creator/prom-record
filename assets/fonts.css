@@ -1,0 +1,30 @@
+@font-face{font-family:'SUIT';font-style:normal;font-weight:400;font-display:swap;src:url('./fonts/SUIT-Regular.woff2') format('woff2')}
+@font-face{font-family:'SUIT';font-style:normal;font-weight:500;font-display:swap;src:url('./fonts/SUIT-Medium.woff2') format('woff2')}
+@font-face{font-family:'SUIT';font-style:normal;font-weight:700;font-display:swap;src:url('./fonts/SUIT-Bold.woff2') format('woff2')}
+@font-face{font-family:'Paperlogy';font-style:normal;font-weight:700;font-display:swap;src:url('./fonts/Paperlogy-7Bold.woff2') format('woff2')}
+@font-face{font-family:'Paperlogy';font-style:normal;font-weight:900;font-display:swap;src:url('./fonts/Paperlogy-9Black.woff2') format('woff2')}
+:root{--font-body:'SUIT',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;--font-display:'Paperlogy','SUIT',sans-serif}
+body,.page{font-family:var(--font-body);font-weight:400;word-break:keep-all;overflow-wrap:break-word;-webkit-font-smoothing:antialiased}
+button,input,textarea,select,.header nav,.nav nav,.nav-link,.footerLinks{font-family:var(--font-body)}
+.mark,.title,.footerWord,.html-page-heading h1,.sectionHeading h2,.newsPage h1,.newsPage h1 em,.clientGrid h3,.featuredText h2,.studio h2,.footerTop>a,.page-directory h2,.newsContent h3,.projectInfo h3,.universeCopy>h3,.subtitle{font-family:var(--font-display);font-style:normal}
+.title{font-size:clamp(52px,11.2vw,180px);letter-spacing:-.065em;font-weight:900;gap:2.4vw;line-height:1.08}
+.mark{font-weight:900;letter-spacing:-1.15px;line-height:1.06;font-size:22px}
+.footerWord{font-size:clamp(40px,11.5vw,185px);letter-spacing:-.065em;line-height:1.1;font-weight:900}
+.sectionHeading h2{font-weight:700;letter-spacing:-.045em;line-height:1.18}
+.featuredText h2{font-weight:700;letter-spacing:-.045em;line-height:1.14}
+.studio h2,.footerTop>a{font-weight:700;letter-spacing:-.04em;line-height:1.4}
+.projectInfo h3{font-weight:700;letter-spacing:-.025em;line-height:1.4}
+.projectInfo small{font-family:var(--font-body);font-weight:400;line-height:1.7}
+.newsContent h3{font-weight:700;letter-spacing:-.03em;line-height:1.55}
+.html-page-heading h1,.newsPage h1{font-weight:900;letter-spacing:-.055em;line-height:1.12}
+.newsPage h1 em{font-weight:900;color:inherit}
+.clientGrid h3{font-weight:900;letter-spacing:-.05em;line-height:1.15}
+.studio>div>p,.newsContent>p,.pageIntro,.record-caption{font-family:var(--font-body);line-height:1.9;letter-spacing:-.015em}
+.header>p,.header nav{font-weight:500;letter-spacing:-.01em;line-height:1.5}
+.page-directory h2{font-weight:700;letter-spacing:-.045em}
+.html-contact{font-weight:700}
+body[data-page='z12'] .nav nav,body[data-page='z12'] .nav-link{font-family:var(--font-body);font-weight:500}
+body[data-case='project'] h1{font-family:var(--font-display);font-weight:900;letter-spacing:-.065em;line-height:1.1}
+body[data-case='project'] .story h2,body[data-case='project'] .subtitle,body[data-case='project'] header strong{font-family:var(--font-display);font-weight:700}
+body[data-case='project'] .story p,body[data-case='project'] .notice{font-family:var(--font-body);line-height:1.95}
+@media(max-width:600px){.title{font-size:10.9vw;letter-spacing:-.065em;gap:2vw}.mark{font-size:19px}.footerWord{font-size:11.9vw}.sectionHeading h2{font-size:30px;letter-spacing:-.04em}.featuredText h2{font-size:32px}.studio h2{font-size:30px}.footerTop>a{font-size:31px}.clientGrid h3{font-size:43px}.newsPage h1{font-size:68px}.html-page-heading h1{font-size:16vw}.newsContent h3{font-size:17px;line-height:1.5}}
