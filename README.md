@@ -15,4 +15,4 @@
 
 ## 방문 통계
 
-GA4·GTM 설정과 가져오기 파일은 [analytics/README.md](analytics/README.md)를 확인하세요. GTM 컨테이너는 공개 페이지를 열면 로드하고, GA4 수집은 방문 동의 후 시작합니다. GTM 연결 파일을 게시하면 GTM이 GA4를 우선 실행하며, 게시 전까지 기존 수집을 유지합니다.
+GA4·GTM 설정과 가져오기 파일은 [analytics/README.md](analytics/README.md)를 확인하세요. GA4 Google 태그는 상위 head에 직접 설치하며 수집은 방문 동의 후 시작합니다. GTM은 별도로 유지하지만 구 GA4 연결 이벤트는 제거했습니다. 과거 가져오기 JSON을 다시 게시하지 마세요.

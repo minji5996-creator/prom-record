@@ -7,14 +7,16 @@
 - Google 태그 관리자: GTM-WSNV4HSJ
 - GA4 측정 ID: G-FF9HTVGCBX
 - 공개 ID 설정: data/analytics.json → public/assets/analytics-config.js
-- 공개 페이지는 GTM 컨테이너를 먼저 로드해 설치 검사에서 감지할 수 있도록 합니다. 기본 동의는 거부이며 GA4 라이브러리와 조회·클릭 전송은 방문 통계 허용 후 시작합니다. 거부 상태에서는 GA4를 실행하지 않습니다. GPC/브라우저 추적 거부, 관리자, 404, 리다이렉트, 다른 프로젝트 및 로컬 환경은 GTM도 제외합니다.
-- 표준 noscript iframe은 공개 페이지 body 시작 직후에 1개 포함합니다. JavaScript가 꺼진 경우 실행되며 JavaScript 기반 통계 동의 로직과는 별도로 동작합니다.
+- 공개 13개 페이지의 상위 head에서 Google tag gtag.js를 정확히 1개 로드합니다. 라이브러리와 태그 ID는 동의 전에도 감지됩니다. 기본 동의는 거부이며 config와 조회·클릭 전송은 통계 허용 후 시작합니다.
+- GTM은 별도로 한 번 로드하되 GA4 실행을 담당하지 않습니다. prom_analytics_ready 이벤트를 제거했고 이전 activateFromGtm 콜백은 항상 false를 반환하므로 과거의 연결 태그는 GA4를 다시 설정하지 못합니다.
+- 이전 analytics-frame.html/js와 GA4 iframe을 제거했습니다. body의 표준 GTM noscript는 JavaScript 비활성 시 사용하므로 유지합니다.
+- 관리자·404·리다이렉트에는 Google 스크립트를 삽입하지 않습니다. GPC/DNT 또는 동의 거부 시 GA4 config와 측정 이벤트를 실행하지 않습니다. 정적 head 라이브러리 다운로드 자체는 있을 수 있습니다.
 
-## 구현
+## 중복 및 검색어 제외
 
-GTM에서 사이트의 GA4 로더를 실행하도록 전환할 준비가 되어 있습니다. **Google 컨테이너 안의 연결 태그 가져오기·게시가 아직 남아 있으며, 연결 완료로 보고하지 않습니다.** gtm-container-import.json을 GTM-WSNV4HSJ에 병합하고 게시하면 prom_analytics_ready 이벤트에서 정확한 컨테이너·측정 ID를 확인한 뒤 GA4를 실행합니다. 1.5초 안에 GTM 연결 태그가 실행되지 않으면 기존 사이트 방식으로 GA4 수집을 유지합니다. 늦거나 중복된 GTM 콜백은 Google 태그나 조회를 추가 실행하지 않습니다. **이 연결 파일 외에 같은 ID의 Google/GA4 태그나 HTML 스니펫을 중복 삽입하지 마세요.**
-
-실제 Google 라이브러리 검증 중 기본 향상된 측정이 부모 문서의 뉴스 검색어를 자동 수집하는 것을 확인했습니다. Google 라이브러리는 assets/analytics-frame.html의 빈 동일 출처 문서에서 실행하고, 부모 사이트의 승인된 이벤트와 정리한 페이지 문맥만 전달하도록 분리했습니다. 자동 관찰기가 문의 폼·뉴스 검색창·부모 URL 변경을 직접 읽지 않습니다. 해당 프레임은 noindex이며 직접 단독으로 열면 GA4를 초기화하지 않습니다. 자동 페이지 조회를 끄고 부모 페이지 URL/제목/유입 도메인으로 명시적인 조회를 전송합니다. iframe의 URL을 보고서 페이지 URL로 사용하지 않습니다.
+자동 page_view는 send_page_view:false로 끄고 정리한 URL로 문서마다 명시적인 조회를 한 번 보냅니다. config도 문서당 한 번이며 중복 API 호출과 구 GTM 콜백은 추가 설정을 만들지 않습니다.
+뉴스 검색 공유 주소는 news_filter를 사용합니다. 기존 q 링크 및 Google의 기본 검색어 매개변수는 라이브러리 초기화 전에 비측정 키로 이전해 기본 향상된 측정의 검색어 자동 수집을 막습니다. 기존 뉴스 필터와 공유·재방문 기능은 유지합니다.
+상위 페이지 직접 설치로 변경했으므로 GA4 계정의 향상된 측정 설정은 현재 문서에 적용됩니다. 폼 시작·제출과 같은 자동 이벤트는 문의 접수 성공(generate_lead)과 다릅니다. 이름·이메일·문의 내용은 사이트 이벤트에 넣지 않습니다.
 
 Google Signals와 광고 개인화를 사용하지 않습니다. 사이트 동의는 analytics_storage만 허용하고 광고 저장소·광고 사용자 데이터·광고 개인화는 거부합니다. 추적 도구 없이도 문의 접수와 사이트 이용은 가능합니다.
 
@@ -37,14 +39,14 @@ Google Signals와 광고 개인화를 사용하지 않습니다. 사이트 동�
 - 주요 이벤트로 generate_lead를 등록하면 문의 전환을 별도로 볼 수 있습니다. 계정 안에서 주요 이벤트 등록과 보고서 반영 여부까지 확인한 것은 아닙니다.
 - 작업별 분석이 필요하면 이벤트 범위 맞춤 측정기준 project_id, article_id, publisher, platform, content_group을 등록합니다.
 - Google 수집 주소의 HTTP 응답은 네트워크 수신 확인이며 GA4 보고서 처리/집계를 보증하지 않습니다.
-- 향상된 측정이 필요 없다면 웹 데이터 스트림에서 끌 수 있습니다. 현재 구현은 부모 문서의 자동 DOM·검색 추적에 의존하지 않습니다.
+- 향상된 측정이 필요 없다면 웹 데이터 스트림에서 끌 수 있습니다. 직접 설치에서는 향상된 측정 설정이 상위 문서에 적용됩니다.
 
 ## 검증
 
-- scripts/qa-analytics.mjs: 모의 Google/Supabase로 미설정·GTM 단독·GTM 게시 전 기존 수집 유지·GTM 우선 실행·지연/중복 콜백·동의/거부/회수·중복 방지·문의 성공/실패·민감 정보 제외를 검증합니다.
+- scripts/qa-analytics.mjs: 모의 Google/Supabase로 직접 head 설치·구 GTM 브리지 무효화·동의/거부/회수·중복 방지·문의 성공/실패·민감 정보 제외를 검증합니다.
 - scripts/qa-ga4-google-runtime.mjs: 실제 Google 라이브러리를 실행하되 수집 요청은 전송 전에 가로채어 검색어 자동 전송·조회 중복을 확인합니다.
 - scripts/qa-analytics-live.mjs: 공개 13개 페이지와 관리자 제외를 확인하고, 허용 후 실제 Google 태그 로드 및 수집 주소 응답을 검사합니다. GA4 대시보드의 내부 데이터에 접근하는 테스트가 아닙니다.
-- window.PROM_ANALYTICS.getStatus()의 gtmTagConfirmed=true 및 ga4Controller=gtm은 해당 문서에서 GTM이 GA4 실행을 제어한 증거입니다. site_fallback이면 기존 직접 수집이 유지 중입니다. googleTagLoaded는 라이브러리 로드 상태이며, 보고서 수신/처리 완료를 뜻하지 않습니다.
+- window.PROM_ANALYTICS.getStatus()의 installation=direct_head와 ga4Controller=head가 현재 정상 상태입니다. legacyGtmBridgeDisabled=true여야 합니다. gtmTagConfirmed=false는 GTM 연결이 더 이상 GA4를 시작하지 않는다는 뜻이며 오류가 아닙니다.
 
 공개 ID 변경:
 
