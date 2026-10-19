@@ -8,7 +8,7 @@ const configured=/^GTM-[A-Z0-9]{4,20}$/.test(config.gtmContainerId||'');
 const ga4Configured=/^G-[A-Z0-9]{4,20}$/.test(config.ga4MeasurementId||'');
 const blocked=navigator.globalPrivacyControl===true||navigator.doNotTrack==='1';
 let state=!inScope||!group?'excluded':!configured?'waiting_for_ids':blocked?'browser_opt_out':'awaiting_consent';
-let active=false,googleQueued=false,gtmLoaded=false,googleTagLoaded=false,queue=[],banner,bridge,fallbackTimer,gtmTagConfirmed=false,ga4Controller='none';
+let active=false,containerQueued=false,googleQueued=false,gtmLoaded=false,googleTagLoaded=false,queue=[],banner,bridge,fallbackTimer,gtmTagConfirmed=false,ga4Controller='none';
 const consentKey='prom-record.analytics-consent.v1';
 function readConsent(){try{return localStorage.getItem(consentKey)}catch{return null}}
 function saveConsent(value){try{localStorage.setItem(consentKey,value)}catch{}}
@@ -49,15 +49,21 @@ function activateFromGtm(containerId,measurementId){
  if(first)window.dataLayer.push({event:'prom_gtm_ga4_connected',prom_gtm_container_id:containerId,prom_ga4_measurement_id:measurementId});
  return true;
 }
+function loadContainer(){
+ if(containerQueued||!inScope||!group||!configured||blocked)return;
+ containerQueued=true;window.dataLayer=window.dataLayer||[];
+ push('consent','default',{analytics_storage:'denied',ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied'});
+ window.dataLayer.push({'gtm.start':Date.now(),event:'gtm.js',prom_content_group:group});
+ const script=document.createElement('script');script.async=true;script.src='https://www.googletagmanager.com/gtm.js?id='+encodeURIComponent(config.gtmContainerId);script.onload=()=>{gtmLoaded=true;if(active&&!googleQueued)state=ga4Configured?'gtm_loaded_waiting_for_ga4_tag':'gtm_loaded_waiting_for_ga4'};script.onerror=()=>{if(active&&!googleQueued)state='gtm_load_failed'};document.head.append(script);
+}
 function activate(){
  if(active||!inScope||!group||!configured||blocked)return;
- active=true;state='gtm_loading';window.dataLayer=window.dataLayer||[];
- push('consent','default',{analytics_storage:'granted',ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied'});
- window.dataLayer.push({'gtm.start':Date.now(),event:'gtm.js',prom_content_group:group});
+ active=true;state=gtmLoaded?(ga4Configured?'gtm_loaded_waiting_for_ga4_tag':'gtm_loaded_waiting_for_ga4'):'gtm_loading';
+ loadContainer();
+ push('consent','update',{analytics_storage:'granted',ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied'});
  track('page_view');
  window.dataLayer.push({event:'prom_analytics_ready'});
- const script=document.createElement('script');script.async=true;script.src='https://www.googletagmanager.com/gtm.js?id='+encodeURIComponent(config.gtmContainerId);script.onload=()=>{gtmLoaded=true;if(active&&!googleQueued)state=ga4Configured?'gtm_loaded_waiting_for_ga4_tag':'gtm_loaded_waiting_for_ga4'};script.onerror=()=>{if(!googleQueued)state='gtm_load_failed'};document.head.append(script);
- if(ga4Configured)fallbackTimer=setTimeout(()=>connectGoogleTag('site_fallback'),1500);
+ if(ga4Configured&&!googleQueued)fallbackTimer=setTimeout(()=>connectGoogleTag('site_fallback'),1500);
 }
 function setConsent(value){
  if(!inScope||!group||!configured||blocked)return;
@@ -71,13 +77,14 @@ function setConsent(value){
 function showConsent(){
  if(banner?.isConnected)return;
  banner=document.createElement('section');banner.className='prom-analytics-consent';banner.setAttribute('aria-label','방문 통계 설정');
- const copy=document.createElement('p');copy.textContent='방문 통계를 허용하시겠어요? 통계 도구를 불러와 페이지 이용과 문의 접수 건수를 집계합니다. 문의 내용은 보내지 않습니다.';
+ const copy=document.createElement('p');copy.textContent='방문 통계를 허용하시겠어요? 허용하면 페이지 이용과 문의 접수 건수를 집계합니다. 문의 내용은 보내지 않습니다.';
  const actions=document.createElement('div');
  for(const [label,value]of [['거부','denied'],['허용','granted']]){const button=document.createElement('button');button.type='button';button.textContent=label;button.dataset.analyticsConsent=value;button.onclick=()=>setConsent(value);actions.append(button)}
  banner.append(copy,actions);document.body.append(banner);
 }
 window.PROM_ANALYTICS=Object.freeze({track,setConsent,connectGoogleTag,activateFromGtm,getStatus:()=>({state,configured,gtmConfigured:configured,ga4Configured,inScope:!!(inScope&&group),active,ga4Controller,gtmTagConfirmed,gtmLoaded,googleTagLoaded,googleTagQueued:googleQueued})});
 if(!inScope||!group||!configured||blocked)return;
+loadContainer();
 function ready(){
  const button=document.createElement('button');button.type='button';button.className='prom-analytics-settings';button.textContent='통계 설정';button.onclick=showConsent;document.body.append(button);
  const consent=readConsent();if(consent==='granted')activate();else if(consent==='denied')state='consent_denied';else showConsent();

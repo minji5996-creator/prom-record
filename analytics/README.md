@@ -7,7 +7,8 @@
 - Google 태그 관리자: GTM-WSNV4HSJ
 - GA4 측정 ID: G-FF9HTVGCBX
 - 공개 ID 설정: data/analytics.json → public/assets/analytics-config.js
-- 방문 통계를 허용한 경우에만 Google 도구를 로드합니다. 거부, GPC/브라우저 추적 거부, 관리자, 404, 리다이렉트, 다른 GitHub 프로젝트 및 로컬 환경은 제외합니다.
+- 공개 페이지는 GTM 컨테이너를 먼저 로드해 설치 검사에서 감지할 수 있도록 합니다. 기본 동의는 거부이며 GA4 라이브러리와 조회·클릭 전송은 방문 통계 허용 후 시작합니다. 거부 상태에서는 GA4를 실행하지 않습니다. GPC/브라우저 추적 거부, 관리자, 404, 리다이렉트, 다른 프로젝트 및 로컬 환경은 GTM도 제외합니다.
+- 표준 noscript iframe은 공개 페이지 body 시작 직후에 1개 포함합니다. JavaScript가 꺼진 경우 실행되며 JavaScript 기반 통계 동의 로직과는 별도로 동작합니다.
 
 ## 구현
 
