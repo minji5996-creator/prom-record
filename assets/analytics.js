@@ -1,12 +1,12 @@
 (()=>{'use strict';
 if(window.PROM_ANALYTICS)return;
 const config=window.PROM_ANALYTICS_CONFIG||{},path=location.pathname;
-const pages={'':'Home','index.html':'Home','studio.html':'Studio','work.html':'Work','news.html':'News','z12.html':'Z12','contact.html':'Contact','work/a2o-may.html':'Project','work/naevis.html':'Project','work/pan-chongchong.html':'Project','work/mcnd.html':'Project','work/enderble.html':'Project','work/vfx.html':'Work','kart/':'Game','kart/index.html':'Game'};
+const pages={'':'Home','index.html':'Home','studio.html':'Studio','work.html':'Work','news.html':'News','z12.html':'Z12','contact.html':'Contact','work/a2o-may.html':'Project','work/naevis.html':'Project','work/pan-chongchong.html':'Project','work/mcnd.html':'Project','work/enderble.html':'Project','work/project.html':'Project','work/vfx.html':'Work','kart/':'Game','kart/index.html':'Game'};
 const inScope=location.origin===config.siteOrigin&&path.startsWith(config.basePath||'/prom-record/');
 const route=inScope?path.slice(config.basePath.length):null,group=pages[route];
 const configured=/^GTM-[A-Z0-9]{4,20}$/.test(config.gtmContainerId||'');
 const ga4Configured=/^G-[A-Z0-9]{4,20}$/.test(config.ga4MeasurementId||'');
-const blocked=navigator.globalPrivacyControl===true||navigator.doNotTrack==='1';
+const blocked=navigator.globalPrivacyControl===true||navigator.doNotTrack==='1'||new URLSearchParams(location.search).get('cms_preview')==='1';
 let state=!inScope||!group?'excluded':!configured?'waiting_for_ids':blocked?'browser_opt_out':'awaiting_consent';
 let active=false,containerQueued=false,googleQueued=false,gtmLoaded=false,googleTagLoaded=false,queue=[],banner,gtmTagConfirmed=false,ga4Controller='none';
 const consentKey='prom-record.analytics-consent.v1';

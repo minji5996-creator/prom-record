@@ -1,0 +1,4 @@
+.studio h2{white-space:pre-line}.cms-project-image img{display:block;width:100%;max-height:75vh;object-fit:contain}.cms-preview-notice{position:fixed;top:8px;left:50%;transform:translateX(-50%);max-width:90%;padding:8px 16px;border:1px solid #f20b83;border-radius:30px;background:#20101eed;color:#ffb6db;z-index:11000;font:12px/1.5 SUIT,sans-serif;pointer-events:none}.pr-chat-card img[hidden]{display:none!important}
+.showcase-selector button[hidden]{display:none!important}.showcase-selector:has(button[hidden]){grid-template-columns:1fr}
+
+body[data-refined] .header>p{overflow:hidden;text-overflow:ellipsis}

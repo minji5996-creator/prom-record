@@ -17,6 +17,8 @@
  const search=el('form',null,'pr-chat-search');const query=el('input');query.type='text';query.maxLength=200;query.placeholder='가격, 제작 기간 등을 입력';query.setAttribute('aria-label','안내 검색');query.autocomplete='off';const send=el('button','보내기');send.type='submit';search.append(query,send);
  panel.append(head,contextLabel,feed,announce,nav,search);
  let data,state,generation=0,submissionBusy=false;
+ function applyCMS(){const next=window.PROM_CMS?.document?.chatbot;if(!next||!data||!state)return;data=next;if(state.version!==data.version||!data.nodes[state.current]){const open=state.open;state=initial();state.open=open;}state.previous=state.previous.filter(p=>data.nodes[p.node]);state.messages=state.messages.filter(m=>!m.node||data.nodes[m.node]);if(!state.messages.length)state.messages=[{node:state.current}];if(state.current!=='inquiry')render();}
+ window.addEventListener('prom:content-updated',applyCMS);
  function initial(){return{version:data.version,current:data.start,previous:[],context:{field:'',conditions:{}},messages:[{node:data.start}],open:false}}
  function save(){try{sessionStorage.setItem(data.storageKey,JSON.stringify(state))}catch{}}
  function restore(){try{const saved=JSON.parse(sessionStorage.getItem(data.storageKey));if(saved?.version!==data.version||!data.nodes[saved.current]||!Array.isArray(saved.previous)||!Array.isArray(saved.messages))return initial();const cleanContext=c=>({field:typeof c?.field==='string'?c.field.slice(0,80):'',conditions:{schedule:typeof c?.conditions?.schedule==='string'?c.conditions.schedule.slice(0,120):''}});return{version:data.version,current:saved.current,previous:saved.previous.filter(p=>data.nodes[p.node]).slice(-30).map(p=>({node:p.node,context:cleanContext(p.context)})),context:cleanContext(saved.context),messages:saved.messages.filter(m=>data.nodes[m.node]||m.kind==='fallback'||m.kind==='matches').slice(-40).map(m=>({node:data.nodes[m.node]?m.node:undefined,kind:m.kind,label:typeof m.label==='string'?m.label.slice(0,200):undefined,matches:Array.isArray(m.matches)?m.matches.filter(id=>data.nodes[id]):undefined})),open:saved.open===true}}catch{return initial()}}
@@ -25,7 +27,7 @@
  function pushMessage(m){state.messages.push(m);state.messages=state.messages.slice(-40)}
  function go(id,label,change){if(!data.nodes[id])return;generation++;state.previous.push({node:state.current,context:structuredClone(state.context)});state.previous=state.previous.slice(-30);state.current=id;if(change?.field)state.context.field=String(change.field).slice(0,80);if(change?.conditions?.schedule)state.context.conditions.schedule=String(change.conditions.schedule).slice(0,120);pushMessage({node:id,label});save();render();announce.textContent=data.nodes[id].answer}
  function goBack(){const prev=state.previous.pop();if(!prev)return;generation++;state.current=prev.node;state.context=prev.context;pushMessage({node:prev.node,label:'이전으로'});save();render();announce.textContent=data.nodes[state.current].answer}
- function safeURL(value){try{const u=new URL(value,siteURL);return u.origin===siteURL.origin&&u.pathname.startsWith(siteURL.pathname)&&/^https?:$/.test(u.protocol)?u.href:null}catch{return null}}
+ function safeURL(value){try{const u=new URL(value,siteURL);return !u.username&&!u.password&&(u.origin===siteURL.origin?u.pathname.startsWith(siteURL.pathname):u.protocol==='https:')?u.href:null}catch{return null}}
  function link(item){const a=el('a',item.label||item.title,'pr-chat-choice');const url=safeURL(item.href);if(url)a.href=url;return a}
  function choices(items,parent){const list=el('div',null,'pr-chat-choices');for(const item of items||[])list.append(item.href?link(item):button(item.label,()=>go(item.target,item.label,item.set),'pr-chat-choice'));parent.append(list)}
  function cards(items,parent){const list=el('div',null,'pr-chat-cards');for(const item of items||[]){const a=el('a',null,'pr-chat-card');const href=safeURL(item.href);if(href)a.href=href;const src=item.image&&safeURL(item.image);if(src){const img=el('img');img.src=src;img.alt=item.title;img.loading='lazy';img.width=300;img.height=160;img.addEventListener('error',()=>img.replaceWith(el('div','이미지 입력 필요','pr-chat-noimage')),{once:true});a.append(img)}else a.append(el('div','이미지 입력 필요','pr-chat-noimage'));a.append(el('strong',item.title),el('span',item.description),el('small','작업 자세히 보기 ↗'));list.append(a)}parent.append(list)}
@@ -58,7 +60,7 @@
   const status=el('p',null,'pr-chat-form-status');status.setAttribute('role','status');const submit=el('button','문의 보내기','pr-chat-submit');submit.type='submit';form.append(status,submit);parent.append(form);
   let requestId,signature;const currentGeneration=generation;
   form.onsubmit=async e=>{
-   e.preventDefault();if(submissionBusy||!form.reportValidity()||trap.value)return;
+   e.preventDefault();if(submissionBusy||!form.reportValidity()||trap.value)return;if(window.PROM_CMS?.preview){status.textContent='미리보기에서는 문의를 전송하지 않습니다.';return;}
    const fields=new FormData(form);const userMessage=String(fields.get('message')).trim();const name=String(fields.get('full_name')).trim();if(name.length<2||userMessage.length<10){status.textContent='이름 2자 이상, 문의 내용 10자 이상 입력해주세요.';return}
    const data={full_name:name,email:String(fields.get('email')).trim(),consent:checkbox.checked,message:'[챗봇 제작 문의]\n제작 분야: '+(field.value||'미선택')+'\n희망 일정: '+(schedule.value.trim()||'미정')+'\n\n'+userMessage};
    const nextSignature=JSON.stringify(data);if(signature!==nextSignature){signature=nextSignature;requestId=crypto.randomUUID()}
@@ -73,7 +75,7 @@
   };
  }
  async function load(){try{
-  const response=await fetch(new URL('chatbot-data.json'+revision,assetURL));if(!response.ok)throw new Error('Unable to load registered answers');data=await response.json();if(!data.nodes?.[data.start])throw new Error('Invalid chatbot data');state=restore();render();
+  const response=await fetch(new URL('chatbot-data.json'+revision,assetURL));if(!response.ok)throw new Error('Unable to load registered answers');data=await response.json();if(!data.nodes?.[data.start])throw new Error('Invalid chatbot data');state=restore();applyCMS();render();window.PROM_CMS?.ready?.then(applyCMS);
  }catch{feed.replaceChildren(el('p','안내를 불러오지 못했습니다. 새로고침하거나 문의 페이지를 이용해주세요.'));const a=el('a','문의 페이지');a.href=new URL('contact.html',siteURL).href;feed.append(a);nav.hidden=true;search.hidden=true;launcher.onclick=()=>{panel.hidden=!panel.hidden;launcher.setAttribute('aria-expanded',String(!panel.hidden))};close.onclick=()=>{panel.hidden=true;launcher.setAttribute('aria-expanded','false');launcher.focus()}}}
  load();
 })();
