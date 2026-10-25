@@ -175,3 +175,13 @@ html.lenis,html.lenis body{height:auto}.lenis:not(.lenis-autoToggle).lenis-stopp
 .editionHeading h2>.motionWord{display:inline-block;color:inherit}.motionWord[data-period]:after{content:".";color:var(--pr-pink)}html.lenis{scroll-behavior:auto}
 
 body[data-refined] .title i{font-size:inherit;flex-basis:.28em}@media(max-width:700px){body[data-refined] .header{gap:15px;align-items:center}body[data-refined] .header nav{gap:5px 10px;max-width:none}body[data-refined] .header nav a.navContact{padding:5px 9px}body[data-refined] .title i{flex-basis:.28em}}@media(max-width:375px){body[data-refined] .header .mark{font-size:20px}body[data-refined] .header nav{font-size:10px;gap:5px 7px}}
+/* PROM HEADER:start */
+body[data-refined] .header{grid-template-columns:auto minmax(0,1fr) auto;gap:clamp(24px,4vw,72px);align-items:center;min-height:108px;padding:24px 3.5%}
+body[data-refined] .header>p{margin:0;white-space:nowrap;font-size:13px;line-height:1.5;letter-spacing:.01em;color:#c8bbc3}
+body[data-refined] .header nav{font-size:18px;font-weight:600;line-height:1.35;gap:28px;max-width:none;flex-wrap:nowrap}
+body[data-refined] .header nav a{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:12px 4px;white-space:nowrap}
+body[data-refined] .header nav a.navContact{padding:12px 22px;border-radius:28px}
+@media(min-width:701px) and (max-width:1150px){body[data-refined] .header{grid-template-columns:auto 1fr;gap:24px}body[data-refined] .header>p{display:none}body[data-refined] .header nav{font-size:17px;gap:24px}}
+@media(max-width:700px){body[data-refined] .header{display:grid;grid-template-columns:1fr;gap:12px;align-items:center;padding:18px 5% 12px;min-height:0}body[data-refined] .header .mark{justify-self:start;font-size:28px;padding:0}body[data-refined] .header>p{display:none}body[data-refined] .header nav{display:flex;justify-content:space-between;width:100%;max-width:none;gap:4px;font-size:15px;flex-wrap:nowrap}body[data-refined] .header nav a{min-height:44px;padding:10px 4px}body[data-refined] .header nav a.navContact{padding:10px 12px}}
+@media(max-width:375px){body[data-refined] .header nav{font-size:14px;gap:2px}body[data-refined] .header nav a.navContact{padding:10px}}
+/* PROM HEADER:end */
