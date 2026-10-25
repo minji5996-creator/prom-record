@@ -16,3 +16,7 @@
 ## 방문 통계
 
 GA4·GTM 설정과 가져오기 파일은 [analytics/README.md](analytics/README.md)를 확인하세요. GA4 Google 태그는 상위 head에 직접 설치하며 수집은 방문 동의 후 시작합니다. GTM은 별도로 유지하지만 구 GA4 연결 이벤트는 제거했습니다. 과거 가져오기 JSON을 다시 게시하지 마세요.
+
+## 콘텐츠 관리
+
+관리자: [콘텐츠 관리](https://minji5996-creator.github.io/prom-record/admin/content.html). 기존 관리자 계정으로 로그인한 뒤 초안 저장 → 미리보기 → 게시 순서로 변경합니다. 안내: [cms/README.md](cms/README.md).
