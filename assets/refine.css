@@ -175,6 +175,23 @@ html.lenis,html.lenis body{height:auto}.lenis:not(.lenis-autoToggle).lenis-stopp
 .editionHeading h2>.motionWord{display:inline-block;color:inherit}.motionWord[data-period]:after{content:".";color:var(--pr-pink)}html.lenis{scroll-behavior:auto}
 
 body[data-refined] .title i{font-size:inherit;flex-basis:.28em}@media(max-width:700px){body[data-refined] .header{gap:15px;align-items:center}body[data-refined] .header nav{gap:5px 10px;max-width:none}body[data-refined] .header nav a.navContact{padding:5px 9px}body[data-refined] .title i{flex-basis:.28em}}@media(max-width:375px){body[data-refined] .header .mark{font-size:20px}body[data-refined] .header nav{font-size:10px;gap:5px 7px}}
+
+/* PROM FOOTER CLEAN:start */
+body[data-refined] .footer{padding:48px 3.5% 26px;border-top:0;background:#ef0b90;color:#180812}
+body[data-refined] .footerTop{display:flex;justify-content:space-between;align-items:center;gap:24px;padding-bottom:32px;border-bottom:1px solid #18081233}
+body[data-refined] .footerTop>span{font-family:inherit;font-size:11px;font-weight:600;letter-spacing:.12em;margin:0;padding:0}
+body[data-refined] .footerTop>a{font-size:clamp(25px,2.5vw,38px);font-weight:700;letter-spacing:-.045em;line-height:1.25;display:inline-flex;align-items:center;gap:12px}
+body[data-refined] .footerLinks{display:flex;align-items:center;flex-wrap:wrap;gap:12px 24px;margin:25px 0 0;font-family:inherit;font-size:13px;line-height:1.5}
+body[data-refined] .footerLinks>p{width:auto;margin:0 auto 0 0;font-size:13px}
+body[data-refined] .footerLinks a{padding:5px 0;border-bottom:0;min-height:32px;display:inline-flex;align-items:center}
+body[data-refined] .footerLinks a:hover{text-decoration:underline;text-underline-offset:5px}
+body[data-refined] .footerWord{display:block;width:max-content;max-width:100%;font-size:clamp(34px,5.2vw,76px);letter-spacing:-.055em;line-height:1.05;margin:38px 0 25px;color:#180812}
+body[data-refined] .colophon{display:flex;flex-wrap:wrap;justify-content:flex-start;align-items:center;gap:12px 28px;font-family:inherit;letter-spacing:.04em;font-size:10px;line-height:1.5;margin-top:0;padding:18px 170px 0 0;border-top:1px solid #18081233}
+body[data-refined] .colophon>span:nth-child(2){margin-right:auto}
+body[data-refined] .colophon a{display:inline-flex;align-items:center;min-height:32px}
+body[data-refined] .footer a:focus-visible{outline:2px solid #180812;outline-offset:5px}
+@media(max-width:700px){body[data-refined] .footer{padding:32px 5% 25px}body[data-refined] .footerTop{padding-bottom:24px;gap:16px}body[data-refined] .footerTop>a{font-size:27px}body[data-refined] .footerTop>span{font-size:10px}body[data-refined] .footerLinks{gap:8px 20px;margin-top:20px;font-size:12px}body[data-refined] .footerLinks>p{flex-basis:100%;font-size:12px;margin-bottom:8px}body[data-refined] .footerWord{font-size:clamp(30px,8.2vw,52px);margin:28px 0 22px}body[data-refined] .colophon{font-size:9px;gap:6px 16px;padding:15px 0 65px}body[data-refined] .colophon>span:nth-child(2){display:none}body[data-refined] .colophon>span:first-child{flex-basis:100%}}
+/* PROM FOOTER CLEAN:end */
 /* PROM HEADER:start */
 body[data-refined] .header{grid-template-columns:auto minmax(0,1fr) auto;gap:clamp(24px,4vw,72px);align-items:center;min-height:108px;padding:24px 3.5%}
 body[data-refined] .header>p{margin:0;white-space:nowrap;font-size:13px;line-height:1.5;letter-spacing:.01em;color:#c8bbc3}
